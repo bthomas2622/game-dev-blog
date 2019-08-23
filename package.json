@@ -4,7 +4,9 @@
   "description": "Ben Thomas game dev blog",
   "main": "index.js",
   "scripts": {
-    "start": "node_modules/.bin/gulp watch"
+    "start": "node_modules/.bin/gulp watch",
+    "build": "node_modules/.bin/gulp",
+    "css": "node_modules/.bin/gulp css"
   },
   "repository": {
     "type": "git",

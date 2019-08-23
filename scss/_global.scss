@@ -5,6 +5,12 @@ body {
   @include serif-font;
 }
 
+.play {
+  font-weight: bolder;
+  font-size: 24px;
+  color: purple;
+}
+
 p {
   line-height: 1.5;
   margin: 30px 0;
