@@ -22,8 +22,15 @@
     "url": "https://github.com/bthomas2622/gamedevblog/issues"
   },
   "homepage": "https://github.com/bthomas2622/gamedevblog#readme",
+  "browserslist": [
+    "last 1 version",
+    "> 1%",
+    "maintained node versions",
+    "not dead"
+  ],
   "dependencies": {
     "@fortawesome/fontawesome-free": "5.9.0",
+    "autoprefixer": "^9.6.1",
     "bootstrap": "4.3.1",
     "jquery": "3.4.1"
   },
