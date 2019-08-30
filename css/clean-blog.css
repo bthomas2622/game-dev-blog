@@ -16,6 +16,12 @@ body {
   color: purple;
 }
 
+.dm {
+  font-weight: bolder;
+  color: purple;
+  text-decoration: none;
+}
+
 p {
   line-height: 1.5;
   margin: 30px 0;
