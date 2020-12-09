@@ -87,12 +87,12 @@
           <p>Feel free to reach out with questions I am <a href="https://twitter.com/freebrunch">freeBrunch</a> on Twitter.</p>
           <p><b><u>Links:</u></b></p>
           <ul>
-            <li><a href="https://github.com/bthomas2622/facepunch-steamworks-tutorial">Tutorial code</a></li>
-            <li><a href="https://wiki.facepunch.com/steamworks/">Facepunch.Steamworks wiki</a></li>
-            <li><a href="https://github.com/Facepunch/Facepunch.Steamworks">Facepunch.Steamworks github</a></li>
-            <li><a href="https://partner.steamgames.com/doc/home">Steamworks docs</a></li>
-            <li><a href="https://creeepling.itch.io/beat-loot-repeat/devlog/148487/adding-steamworks-p2p-multiplayer-can-be-a-pain-but">Creeepling itch.io Steamworks P2P Devlog</a></li>
-            <li><a href="https://store.steampowered.com/app/1421410/Nectar_of_the_Gods/">Nectar of the Gods Steam page</a></li>
+            <li><a style="color: blueviolet; font-weight: bold;" href="https://github.com/bthomas2622/facepunch-steamworks-tutorial">Tutorial code</a></li>
+            <li><a style="color: blueviolet; font-weight: bold;" href="https://wiki.facepunch.com/steamworks/">Facepunch.Steamworks wiki</a></li>
+            <li><a style="color: blueviolet; font-weight: bold;" href="https://github.com/Facepunch/Facepunch.Steamworks">Facepunch.Steamworks github</a></li>
+            <li><a style="color: blueviolet; font-weight: bold;" href="https://partner.steamgames.com/doc/home">Steamworks docs</a></li>
+            <li><a style="color: blueviolet; font-weight: bold;" href="https://creeepling.itch.io/beat-loot-repeat/devlog/148487/adding-steamworks-p2p-multiplayer-can-be-a-pain-but">Creeepling itch.io Steamworks P2P Devlog</a></li>
+            <li><a style="color: blueviolet; font-weight: bold;" href="https://store.steampowered.com/app/1421410/Nectar_of_the_Gods/">Nectar of the Gods Steam page</a></li>
           </ul>
           <p><a href="https://store.steampowered.com/app/1421410/Nectar_of_the_Gods/">Nectar of the Gods</a> was always going to be an online multiplayer game. I love multiplayer games and wanted to make something I could play with friends. But I had a few obstacles to overcome as a first time independent developer:</p>
           <ol>
@@ -103,11 +103,58 @@
           </ol>
           <p>A lot of people in my initial research were recommending using <a href="https://partner.steamgames.com/doc/features/multiplayer">Steamworks</a> to do the netcode heavy lifting. Steam offers free backend APIs via Steamworks to help you set up things like game lobbies, P2P packet management, etc. The downside was that I could only distribute my game through Steam to take advantage of this online implementation. This was a worth it tradeoff for me though because I was making a PC game, Steam is a great marketplace, and without much resources Steamworks was a life saver.</p>
           <p>Buuut Steamworks is written in C++, so to use it with Unity I would need to use a C# wrapper. And it appeared the latest and greatest Steamworks C# implementation was a MIT open source project created by Garry Newman (of Garry’s Mod) called “Facepunch.Steamworks”. The most recent release as of this writing was February 28, 2020 but it does seem to still be active with contributions.</p>
-          <h2 class="section-heading">Preprequisites</h2>
+          <h2 class="section-heading">Prerequisites</h2>
           <ul>
-            <li>You will need valid Steam AppID by <a href="https://partner.steamgames.com/doc/store/application">paying Steam app fee</a></li>
-            <li><a href="https://wiki.facepunch.com/steamworks/Setting_Up">Facepunch.Steamworks Install + Setup</a></li>
+            <li>You will need valid Steam AppID by <a style="color: blueviolet; font-weight: bold;" href="https://partner.steamgames.com/doc/store/application">paying Steam app fee</a></li>
+            <li><a style="color: blueviolet; font-weight: bold;" href="https://wiki.facepunch.com/steamworks/Setting_Up">Facepunch.Steamworks Install + Setup</a></li>
           </ul>
+          <h2 class="section-heading">Getting Started</h2>
+          <p>I essentially managed all my Steamworks functions and statuses in a singleton created at app startup called <b>SteamManager.cs</b>.</p>
+          <p>In the <b>Awake()</b> function I setup my Singleton, and initialize my Steam Client with <b>SteamClient.Init</b>.</p>
+          <pre>
+            <code>
+              public void Awake()
+                {
+                    if (Instance == null)
+                    {
+                        daRealOne = true;
+                        DontDestroyOnLoad(gameObject);
+                        Instance = this;
+                        PlayerName = "";
+                        try
+                        {
+                            // Create client
+                            SteamClient.Init(gameAppId, true);
+  
+                            if (!SteamClient.IsValid)
+                            {
+                                Debug.Log("Steam client not valid");
+                                throw new Exception();
+                            }
+  
+                            PlayerName = SteamClient.Name;
+                            PlayerSteamId = SteamClient.SteamId;
+                            playerSteamIdString = PlayerSteamId.ToString();
+                            activeUnrankedLobbies = new List<Lobby>();
+                            activeRankedLobbies = new List<Lobby>();
+                            connectedToSteam = true;
+                            Debug.Log("Steam initialized: " + PlayerName);
+                        }
+                        catch (Exception e)
+                        {
+                            connectedToSteam = false;
+                            playerSteamIdString = "NoSteamId";
+                            Debug.Log("Error connecting to Steam");
+                            Debug.Log(e);
+                        }
+                    }
+                    else if (Instance != this)
+                    {
+                        Destroy(gameObject);
+                    }
+                }
+            </code>
+          </pre>
           
           
           <h2 class="section-heading">Reaching for the Stars</h2>
