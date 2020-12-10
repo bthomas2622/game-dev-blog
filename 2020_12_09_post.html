@@ -84,7 +84,7 @@
           <p><b>This is a tutorial for how to use “Facepunch.Steamworks”, a Steamworks C# wrapper, to implement P2P multiplayer and other Steamworks features in a Unity game.</b></p>
           <p>I found the Facepunch.Steamworks documentation to be very good, but found very few code examples on the internet so I wanted to write this in case it can be helpful for anyone as a jumping off point.</p>
           <p>You will need to know you’re way around some Unity C# and have some eagerness to jump into Facepunch.Steamworks and Steamworks documentation.</p>
-          <p>Feel free to reach out with questions I am <a href="https://twitter.com/freebrunch">freeBrunch</a> on Twitter.</p>
+          <p>Feel free to reach out with questions I am <a href="https://twitter.com/freebrunch">@freeBrunch</a> on Twitter.</p>
           <p><b><u>Links:</u></b></p>
           <ul>
             <li><a style="color: blueviolet; font-weight: bold;" href="https://github.com/bthomas2622/facepunch-steamworks-tutorial">Tutorial code</a></li>
@@ -238,7 +238,7 @@
           </pre>
           <h3 class="section-heading">Another player joins lobby after searching for it</h3>
           <p>The way I populate lobbies a player can join in my game is:</p>
-          <p><b>Lobby[] lobbies = await SteamMatchmaking.LobbyList</b></p>
+          <pre><code>Lobby[] lobbies = await SteamMatchmaking.LobbyList</code></pre>
           <p>In my game I display these lobbies as options to the player looking for a game, but you could handle all this in the background if you wanted to go with a more matchmaking approach.</p>
           <p>I refined my lobby search with parameters like <b>"WithMaxResults"</b> and <b>"WithKeyValue"</b> to separate my ranked and unranked lobbies.</p>
           <pre>
@@ -292,7 +292,80 @@
               }      
             </code>
           </pre>
-
+          <h3 class="section-heading">All lobby players accept P2P session with each other</h3>
+          <p>I kinda stumbled into this implementation and my code has different ways of doing this. There are a lot of different callbacks that can be used for when a player joins a lobby. The main thing is the SteamIds need to be exchanged so that each player can call:</p>
+          <pre><code>SteamNetworking.AcceptP2PSessionWithUser(opponentSteamId);</code></pre>
+          <p>One of the ways I exchange SteamIds is with the <b>OnLobbyMemberJoined</b> callback. So the host gets the joining player SteamId and AcceptsP2P on it. And the person joining can AcceptP2P on <b>Lobby.Owner.id</b></p>
+          <pre>
+            <code>
+              void OnLobbyMemberJoinedCallback(Lobby lobby, Friend friend)
+              {
+                  Debug.Log("someone else joined lobby");
+                  if (friend.Id != PlayerSteamId)
+                  {
+                      LobbyPartner = friend;
+                      OpponentSteamId = friend.Id;
+                      SteamNetworking.AcceptP2PSessionWithUser(OpponentSteamId);
+                  }
+              }          
+            </code>
+          </pre>
+          <h3 class="section-heading">Game starts and both players send packets to each other</h3>
+          <p>There are few ways for the host of a lobby to let other members know that it’s time to start the game. They can call <b>“lobby.SetGameServer(PlayerSteamId);”</b> and trigger everyone’s <b>OnLobbyGameCreated</b> callback.</p>
+          <pre><code>SteamMatchmaking.OnLobbyGameCreated += OnLobbyGameCreatedCallback;</code></pre>
+          <p>Or you could communicate with chat messages api, etc.</p>
+          <p>After the game has started I have a GameObject (not SteamManager.cs) in my game scene that receives and sends data packets. To receive data packets I use:</p>
+          <pre>
+            <code>
+              void Awake()
+              {
+                  // Check every 0.05 seconds for new packets
+                  InvokeRepeating("ReceiveDataPacket", 0f, 0.05f);
+              }
+          
+          
+              void ReceiveDataPacket()
+              {
+                  while (SteamNetworking.IsP2PPacketAvailable())
+                  {
+                      var packet = SteamNetworking.ReadP2PPacket();
+                      if (packet.HasValue)
+                      {
+                          HandleOpponentDataPacket(packet.Value.Data);
+                      }
+                  }
+              }          
+            </code>
+          </pre>
+          <p>And to send data packets I use:</p>
+          <pre><code>SteamNetworking.SendP2PPacket(opponentSteamId, dataToSend);</code></pre>
+          <pre>
+            <code>
+              public void SendAdHocData(string adHocData)
+               {
+                   if (!SteamManager.Instance.LobbyPartnerDisconnected)
+                   {
+                       string dataToSend = adHocData;
+                       var sent = SteamNetworking.SendP2PPacket(opponentSteamId, ConvertStringToByteArray(dataToSend));
+                       if (!sent)
+                       {
+                           var sent2 = SteamNetworking.SendP2PPacket(opponentSteamId, ConvertStringToByteArray(dataToSend));
+                           if (!sent2)
+                           {
+                               thingsThatFailedToSend.Add(ConvertStringToByteArray(dataToSend));
+                           }
+                       }
+                   }
+               }           
+            </code>
+          </pre>
+          <h3 class="section-heading">Lobby Cleanup</h3>
+          <p>Lobby / Game Server are garbage collected automatically when both players call “Leave()” on a Steamworks Lobby object (which is cached in SteamManager singleton). This is why it’s important to call “leaveLobby” on onDestroy(), and when a player quits, and any other case that represents a player leaving a session.</p>
+          <h2 class="section-heading">The End</h2>
+          <p>And that’s the core loop! Checkout the <a href="https://github.com/bthomas2622/facepunch-steamworks-tutorial">full boilerplate code</a> in the github repo. It has things like inviting a friend to a game lobby, unlocking achievements, setting steam rich presence, etc. Things like achievements and rich presence also need to be configured on the Steam end of things.</p>
+          <p>I hope this is helpful! Suggest edits to me <a href="https://twitter.com/freebrunch">@freeBrunch</a> on Twitter.</p>
+          <p>Plug for my game <a href="https://store.steampowered.com/app/1421410/Nectar_of_the_Gods/">Nectar of the Gods</a> on Steam.</p>
+          <p><i><b>"An unquenchable multiplayer real-time strategy game where bugs clash over the sweet nectar of sugary beverages. From Beetle Brigade to Spidey Party, you will artfully master strengths and shortcomings to topple boba shops and coffee bars. The countertop mayhem has begun."</b></i></p>
         </div>
       </div>
     </div>
